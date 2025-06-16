@@ -16,5 +16,33 @@ export interface PriceHistory {
   price: number;
 }
 
+export interface TopPriceChange {
+  Fecha: string;
+  Producto: string;
+  Precio_Sogamoso: number;
+  Precio_Tunja: number;
+  Precio_Duitama: number;
+  Precio_Bogotá: number;
+  Promedio_Mercados: number;
+  cambio: number;
+  movimiento: 'subió' | 'bajó';
+}
+
+export interface PriceEvolution {
+  Fecha: string;
+  Precio_Sogamoso: number;
+  Precio_Duitama: number;
+  Precio_Tunja: number;
+  Precio_Bogota: number;
+}
+
+export interface DashboardStats {
+  totalProducts: number;
+  averagePrice: number;
+  priceIncreases: number;
+  priceDecreases: number;
+  lastUpdate: string;
+}
+
 export type Market = string;
 export type Category = string;
