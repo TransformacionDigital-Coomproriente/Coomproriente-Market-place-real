@@ -2,6 +2,32 @@ const xlsx = require('xlsx');
 const path = require('path');
 const { formatFecha } = require('../utils/date.util');
 const { getProductoInfo } = require('../utils/productoInfo.util');
+const { groupBy, mean, std } = require('../utils/math.util');
+
+// Cargar datos desde Excel
+function excelDateToISO(dateNumber) {
+  const parsed = xlsx.SSF.parse_date_code(dateNumber);
+  if (!parsed) return null;
+  const { y, m, d } = parsed;
+  return new Date(Date.UTC(y, m - 1, d)).toISOString().slice(0, 10);
+}
+
+const rutaExcel = path.join(__dirname, '../data/df_completo_con_cambios.xlsx');
+let rawData = [];
+
+try {
+  const workbook_completo = xlsx.readFile(rutaExcel);
+  const sheet = workbook_completo.Sheets[workbook_completo.SheetNames[0]];
+  rawData = xlsx.utils.sheet_to_json(sheet).map(row => ({
+    ...row,
+    Fecha: excelDateToISO(row.Fecha),
+    cambio: typeof row.cambio === 'string' ? parseFloat(row.cambio) : row.cambio
+  }));
+  console.log(`[INFO] Datos cargados correctamente desde ${rutaExcel}`);
+} catch (error) {
+  console.error(`[ERROR] No se pudo cargar el archivo Excel: ${rutaExcel}`);
+  console.error(error);
+}
 
 const obtenerProductosPorFecha = (fecha) => {
   const workbook = xlsx.readFile(path.join(__dirname, '../data/df_Predicciones_completo_con_cambios.xlsx'));
@@ -35,7 +61,81 @@ const obtenerProductosPorFecha = (fecha) => {
     };
   });
 };
+const getTopCambios = (fecha) => {
+  console.log(`[INFO] Cantidad de registros cargados: ${rawData.length}`);
+  if (!rawData || rawData.length === 0) {
+    throw new Error('No se han cargado los datos desde el archivo Excel');
+  }
+  if (!fecha) {
+    throw new Error('Debe enviar el parámetro fecha (YYYY-MM-DD)');
+  }
+  console.log(`[INFO] Obteniendo top cambios para la fecha: ${fecha}`);
+  const datosFiltrados = rawData
+    .filter(row => row.Fecha === fecha && typeof row.cambio === 'number' && !isNaN(row.cambio));
+
+  return datosFiltrados
+    .sort((a, b) => Math.abs(b.cambio) - Math.abs(a.cambio))
+    .slice(0, 10);
+};
+
+const getPromedioPorProducto = () => {
+  const grouped = groupBy(rawData, 'Producto');
+  return Object.entries(grouped).map(([producto, registros]) => ({
+    producto,
+    promedio: mean(registros.map(r => r.Promedio_Mercados))
+  }));
+};
+
+const getProductosVolatiles = () => {
+  const grouped = groupBy(rawData, 'Producto');
+  return Object.entries(grouped)
+    .map(([producto, registros]) => ({
+      producto,
+      volatilidad: std(registros.map(r => r.Promedio_Mercados))
+    }))
+    .sort((a, b) => b.volatilidad - a.volatilidad)
+    .slice(0, 10);
+};
+
+const getPreciosEnTiempo = (fechaInicio, fechaFin, Producto) => {
+
+  const data = rawData.filter(row => {
+    const fecha = new Date(row.Fecha);
+    return row.Producto === Producto &&
+      fecha >= new Date(fechaInicio) &&
+      fecha <= new Date(fechaFin);
+  });
+
+  if (data.length === 0) {
+    throw new Error(`No se encontraron datos para el producto ${Producto} entre ${fechaInicio} y ${fechaFin}`);
+  }
+  console.log(`[INFO] Cantidad de registros encontrados: ${data.length}`);
+  data.sort((a, b) => new Date(a.Fecha) - new Date(b.Fecha));
+  console.log(`[INFO] Datos ordenados por fecha`);
+  console.log(`[INFO] Cantidad de registros después de ordenar: ${JSON.stringify(data)}`);
+  return data.map(row => ({
+    Fecha: row.Fecha,
+    Precio_Sogamoso: row.Precio_Sogamoso,
+    Precio_Duitama: row.Precio_Duitama,
+    Precio_Tunja: row.Precio_Tunja,
+    Precio_Bogota: row.Precio_Bogotá,
+  }));    
+}
+const getNombreProductosUnicos = () => {
+  const productosUnicos = new Set();
+  rawData.forEach(row => {
+    if (row.Producto) {
+      productosUnicos.add(row.Producto);
+    }
+  });
+  return Array.from(productosUnicos);
+}
 
 module.exports = {
-  obtenerProductosPorFecha
+  obtenerProductosPorFecha,
+  getTopCambios,
+  getPromedioPorProducto,
+  getProductosVolatiles,
+  getPreciosEnTiempo,
+  getNombreProductosUnicos
 };
