@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { LineChart as LucideLineChart, Calendar, RefreshCw } from 'lucide-react';
 import { PriceEvolution as PriceEvolutionType } from '../../types';
 import { apiService } from '../../services/api.ts';
-import { formatPrice, formatDate } from '../../utils/helpers.ts';
+import { formatPrice, formatDate, apiUrl } from '../../utils/helpers.ts';
 import axios from 'axios';
 import {
   LineChart,
@@ -35,7 +35,7 @@ const PriceEvolution: React.FC = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await axios.get<string[]>('http://localhost:3001/productos/productos-unicos');
+        const response = await axios.get<string[]>(`${apiUrl}/productos/productos-unicos`);
         setAvailableProducts(response.data);
         if (response.data.length > 0) setSelectedProduct(response.data[0]);
       } catch (err) {
