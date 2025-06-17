@@ -20,6 +20,7 @@ const MARKETS = [
   { key: 'Precio_Duitama', label: 'Duitama', color: '#3B82F6' },
   { key: 'Precio_Tunja', label: 'Tunja', color: '#F59E0B' },
   { key: 'Precio_Bogota', label: 'Bogotá', color: '#EF4444' },
+  
 ];
 
 const PriceEvolution: React.FC = () => {
