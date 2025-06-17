@@ -131,11 +131,59 @@ const getNombreProductosUnicos = () => {
   return Array.from(productosUnicos);
 }
 
+const getPrediccionesEnTiempo = (fechaInicio, fechaFin, Producto) => {
+  const workbook = xlsx.readFile(path.join(__dirname, '../data/df_Predicciones_completo_con_cambios.xlsx'));
+  const sheet = workbook.Sheets[workbook.SheetNames[0]];
+  const dataExcel = xlsx.utils.sheet_to_json(sheet, { defval: null });
+
+  // Normalizar datos con coma decimal
+  const data = dataExcel.map(row => ({
+    ...row,
+    ds: typeof row.ds === 'number'
+     ? new Date(Date.UTC(1900, 0, row.ds - 1))
+     : new Date(row.ds),
+    yhat: parseFloat((row.yhat || "").toString().replace(',', '.')),
+    yhat_lower: parseFloat((row.yhat_lower || "").toString().replace(',', '.')),
+    yhat_upper: parseFloat((row.yhat_upper || "").toString().replace(',', '.')),
+    cambio: row.cambio !== null && row.cambio !== undefined
+      ? parseFloat((row.cambio || "").toString().replace(',', '.'))
+      : null,
+    movimiento: row.movimiento
+  }));
+
+
+  const filtrados = data.filter(row => {
+    const fecha = new Date(row.ds);
+    return row.Producto === Producto &&
+      fecha >= new Date(fechaInicio) &&
+      fecha <= new Date(fechaFin);
+  });
+
+  if (filtrados.length === 0) {
+    throw new Error(`No se encontraron predicciones para el producto ${Producto} entre ${fechaInicio} y ${fechaFin}`);
+  }
+
+  filtrados.sort((a, b) => new Date(a.ds) - new Date(b.ds));
+
+  return filtrados.map(row => ({
+    Fecha: formatFecha(row.ds),
+    Producto: row.Producto,
+    Prediccion: row.yhat,
+    Minimo: row.yhat_lower,
+    Maximo: row.yhat_upper,
+    Cambio: row.cambio ?? null,
+    Movimiento: row.movimiento ?? "sin datos"
+  }));
+};
+
+
+
 module.exports = {
   obtenerProductosPorFecha,
   getTopCambios,
   getPromedioPorProducto,
   getProductosVolatiles,
   getPreciosEnTiempo,
-  getNombreProductosUnicos
+  getNombreProductosUnicos,
+  getPrediccionesEnTiempo
 };

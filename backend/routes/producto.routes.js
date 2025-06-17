@@ -8,4 +8,5 @@ router.get('/precios-tiempo', productoController.obtenerPreciosTiempo);
 router.get('/promedio-producto', productoController.obtenerPromedioProducto);
 router.get('/volatilidad', productoController.obtenerVolatilidad);
 router.get('/productos-unicos', productoController.productosUnicos);
+router.get('/predicciones-tiempo', productoController.obtenerPrediccionesTiempo);
 module.exports = router;

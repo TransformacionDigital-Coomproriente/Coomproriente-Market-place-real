@@ -55,11 +55,28 @@ const productosUnicos = (req, res) => {
     res.status(500).json({ error: 'Error al procesar los productos únicos' });
   }
 };
+const obtenerPrediccionesTiempo = (req, res) => {
+  const { inicio, fin, producto } = req.query;
+
+  if (!inicio || !fin || !producto) {
+    return res.status(400).json({ error: 'Debe enviar los parámetros inicio, fin y producto (YYYY-MM-DD)' });
+  }
+
+  try {
+    const data = productoService.getPrediccionesEnTiempo(inicio, fin, producto);
+    res.json(data);
+  } catch (error) {
+    console.error('[ERROR] ', error.message);
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
   obtenerProductos,
   obtenerTopCambios,
   obtenerPreciosTiempo,
   obtenerPromedioProducto,
   obtenerVolatilidad,
-  productosUnicos
+  productosUnicos,
+  obtenerPrediccionesTiempo
 };

@@ -4,6 +4,7 @@ import DashboardStats from './DashboardStats.tsx';
 import TopPriceChanges from './TopPriceChanges.tsx';
 import PriceEvolution from './PriceEvolution.tsx';
 import { Product, DashboardStats as StatsType } from '../../types';
+import PredictionDashboard from './PredictionDashboard.tsx';
 
 interface DashboardProps {
   products: Product[];
@@ -50,6 +51,7 @@ const Dashboard: React.FC<DashboardProps> = ({ products }) => {
       <DashboardStats stats={stats} />
       <TopPriceChanges />
       <PriceEvolution />
+      <PredictionDashboard />
     </div>
   );
 };
